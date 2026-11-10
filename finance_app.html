@@ -1,183 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Esosa Wealth Tracker</title>
-    <!-- 🌐 FIXED FULL ADDRESS FOR CHART ENGINE: -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
-    <style>
-        body { background-color: #0b0f19; color: #ffffff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px; }
-        .dashboard { max-width: 1000px; margin: 0 auto; }
-        h1 { color: #00d2ff; margin-bottom: 5px; }
-        
-        .budget-alert {
-            display: none; background: rgba(255, 74, 90, 0.15); border: 2px solid #ff4a5a;
-            color: #ff4a5a; padding: 15px; border-radius: 8px; margin-top: 20px; font-weight: bold; text-align: left;
-        }
-
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }
-        .metric-card { background: #141c2f; padding: 25px; border-radius: 12px; border: 1px solid #1e2942; text-align: left; }
-        .metric-card h3 { margin: 0; color: #8f9cae; font-size: 14px; text-transform: uppercase; }
-        .metric-card p { margin: 10px 0 0 0; font-size: 28px; font-weight: bold; }
-        .balance { color: #00d2ff; } .income { color: #2cfd73; } .expense { color: #ff4a5a; }
-        
-        .workspace-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-top: 30px; }
-        .chart-container { background: #141c2f; padding: 20px; border-radius: 12px; border: 1px solid #1e2942; max-height: 380px; }
-
-        .form-panel { background: #141c2f; padding: 25px; border-radius: 12px; border: 1px solid #1e2942; margin-bottom: 40px; display: flex; gap: 15px; align-items: center; justify-content: space-between; }
-        select, input { padding: 12px; border-radius: 6px; border: 1px solid #1e2942; background: #0b0f19; color: white; font-size: 15px; outline: none; }
-        select:focus, input:focus { border-color: #00d2ff; }
-        .post-btn { padding: 12px 24px; background: #00d2ff; color: #0b0f19; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        .post-btn:hover { background: #00b8e6; }
-        
-        table { width: 100%; border-collapse: collapse; background: #141c2f; border-radius: 12px; overflow: hidden; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #1e2942; }
-        th { background: #1e2942; color: #8f9cae; font-size: 14px; text-transform: uppercase; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-income { background: rgba(44,253,115,0.15); color: #2cfd73; }
-        .badge-expense { background: rgba(255,74,90,0.15); color: #ff4a5a; }
-        .delete-btn { background: #ff4a5a; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .delete-btn:hover { background: #cc3b49; }
-    </style>
+    <title>Esosa Wealth Vault Engine</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="dashboard">
-        <h1>📈 Esosa Wealth Analytics Dashboard</h1>
-        <p style="color: #8f9cae; margin: 0;">Production Core v1.2 • Live Allocation Chart Engine</p>
+    <!-- 👥 AUTHENTICATION GATEWAY -->
+    <div id="auth-screen" class="auth-panel">
+        <h2 id="auth-title">Account Login</h2>
+        <input type="text" id="auth-username" class="auth-input" placeholder="Enter Username">
+        <input type="password" id="auth-password" class="auth-input" placeholder="Enter Password">
+        <button class="auth-btn" id="auth-main-btn" onclick="executeAuthAction()">Sign In</button>
+        <span class="toggle-link" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register here</span>
+    </div>
+
+    <!-- 📈 WEALTH DASHBOARD CONSOLE -->
+    <div id="app-screen" class="app-content wrapper">
+        <div class="nav-header">
+            <div>
+                <h1>📈 Esosa Wealth Vault</h1>
+                <p style="color: #8f9cae; margin: 0;">SQL Relational Network Cloud Core v2.0</p>
+            </div>
+            <button class="logout-btn" onclick="logoutSession()">Disconnect Engine</button>
+        </div>
 
         <div id="budget-banner" class="budget-alert">⚠️ WARNING: Your monthly outflow threshold has broken past your budget constraints! Limit optional spending.</div>
 
         <div class="metrics-grid">
-            <div class="metric-card"><h3>Net Valuation Balance</h3><p class="balance" id="net-balance">$0.00</p></div>
-            <div class="metric-card"><h3>Total Inflow Streams</h3><p class="income" id="total-income">$0.00</p></div>
-            <div class="metric-card"><h3>Total Outflow Debits</h3><p class="expense" id="total-expense">$0.00</p></div>
+            <div class="metric-card"><h3>Net Valuation</h3><p class="balance" id="net-balance">$0.00</p></div>
+            <div class="metric-card"><h3>Total Inflows</h3><p class="income" id="total-income">$0.00</p></div>
+            <div class="metric-card"><h3>Total Outflows</h3><p class="expense" id="total-expense">$0.00</p></div>
         </div>
 
         <div class="form-panel">
             <select id="tx-type"><option value="Income">Income (+)</option><option value="Expense">Expense (-)</option></select>
-            <input type="number" id="tx-amount" placeholder="Amount ($)" style="width: 120px;">
-            <input type="text" id="tx-category" placeholder="Category (e.g. Salary, Food)">
-            <input type="text" id="tx-desc" placeholder="Description Note" style="width: 250px;">
+            <input type="number" id="tx-amount" placeholder="Amount ($)" style="width: 110px;">
+            <input type="text" id="tx-category" placeholder="Category">
+            <input type="text" id="tx-desc" placeholder="Description Note" style="width: 220px;">
             <button class="post-btn" onclick="logTransactionAsset()">Post Record</button>
         </div>
 
-        <div class="workspace-layout">
+        <div class="workspace">
             <div>
                 <h2>📋 Audit History Log</h2>
                 <table>
-                    <thead><tr><th>Registry Type</th><th>Amount</th><th>Category</th><th>Description Details</th><th>Action Panel</th></tr></thead>
+                    <thead><tr><th>Type</th><th>Amount</th><th>Category</th><th>Description</th><th>Action</th></tr></thead>
                     <tbody id="ledger-rows"></tbody>
                 </table>
             </div>
             
-            <div class="chart-container">
-                <h2 style="margin-top: 0; font-size: 18px; color: #8f9cae;">📊 WEALTH OUTFLOW MATRIX</h2>
-                <div style="position: relative; height:280px; width:100%;">
-                    <canvas id="wealthChart"></canvas>
+            <!-- 📊 NATIVE VISUAL ALLOCATION MATRIX SPLIT -->
+            <div class="chart-box">
+                <h2 style="margin-top: 0; font-size: 16px; color: #8f9cae;">📊 WEALTH OUTFLOW MATRIX</h2>
+                <div class="matrix-labels">
+                    <span style="color: #2cfd73;">● Saved Net Wealth (<span id="saved-pct">100</span>%)</span>
+                    <br>
+                    <span style="color: #ff4a5a;">● Expenses Outflow (<span id="expense-pct">0</span>%)</span>
+                </div>
+                <div class="bar-container">
+                    <div id="matrix-bar-saved"></div>
+                    <div id="matrix-bar-expense"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const MONTHLY_BUDGET_CAP = 1000.00;
-        let wealthChartInstance = null;
-
-        window.onload = function() { fetchLedgerDataLogs(); };
-
-        function updateChartVisualization(income, expense) {
-            let canvas = document.getElementById('wealthChart');
-            if (!canvas) return;
-            let ctx = canvas.getContext('2d');
-            
-            if (wealthChartInstance) { wealthChartInstance.destroy(); }
-            
-            // Generate visual chart configuration layout data
-            wealthChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Net Wealth Saved', 'Total Expenses Outflow'],
-                    datasets: [{
-                        data: [income - expense, expense],
-                        backgroundColor: ['#2cfd73', '#ff4a5a'],
-                        borderColor: '#141c2f',
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    legend: { labels: { fontColor: 'white', fontFamily: 'Segoe UI' } }
-                }
-            });
-        }
-
-        function fetchLedgerDataLogs() {
-            fetch("http://localhost:8000/ledger")
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("net-balance").innerHTML = "$" + data.balance.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById("total-income").innerHTML = "$" + data.total_income.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById("total-expense").innerHTML = "$" + data.total_expense.toLocaleString('en-US', {minimumFractionDigits: 2});
-                
-                let banner = document.getElementById("budget-banner");
-                if (data.total_expense > MONTHLY_BUDGET_CAP) { banner.style.display = "block"; } else { banner.style.display = "none"; }
-
-                updateChartVisualization(data.total_income, data.total_expense);
-
-                let rowsBox = document.getElementById("ledger-rows");
-                rowsBox.innerHTML = "";
-                
-                for (let i = data.transactions.length - 1; i >= 0; i--) {
-                    let item = data.transactions[i];
-                    let row = document.createElement("tr");
-                    let badgeClass = item.type === "Income" ? "badge-income" : "badge-expense";
-                    
-                    row.innerHTML = `
-                        <td><span class="badge ${badgeClass}">${item.type.toUpperCase()}</span></td>
-                        <td class="${item.type === 'Income' ? 'income' : 'expense'}">$${item.amount.toFixed(2)}</td>
-                        <td><strong>${item.category}</strong></td>
-                        <td style="color: #8f9cae;">${item.description}</td>
-                        <td><button class="delete-btn" onclick="deleteTransactionAsset(${i})">Delete</button></td>
-                    `;
-                    rowsBox.appendChild(row);
-                }
-            })
-            .catch(err => { console.error("Database load error:", err); });
-        }
-
-        function logTransactionAsset() {
-            let type = document.getElementById("tx-type").value;
-            let amount = document.getElementById("tx-amount").value;
-            let category = document.getElementById("tx-category").value;
-            let description = document.getElementById("tx-desc").value;
-
-            if (!amount || !category) return;
-
-            fetch("http://localhost:8000/add", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type, amount, category, description })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("tx-amount").value = "";
-                document.getElementById("tx-category").value = "";
-                document.getElementById("tx-desc").value = "";
-                fetchLedgerDataLogs();
-            });
-        }
-
-        function deleteTransactionAsset(targetIndex) {
-            fetch("http://localhost:8000/delete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ index: targetIndex })
-            })
-            .then(res => res.json())
-            .then(data => { fetchLedgerDataLogs(); });
-        }
-    </script>
-
+    <script src="app.js"></script>
 </body>
 </html>
