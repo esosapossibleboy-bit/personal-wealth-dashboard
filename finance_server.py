@@ -55,9 +55,9 @@ def token_required(f):
         if not auth_header or not auth_header.startswith("Bearer "):
             return jsonify({"status": "Error", "message": "Missing or invalid security token"}), 401
         
-        token = auth_header.split(" ")
+        # Cleanly extract the token string after "Bearer "
+        token = auth_header.replace("Bearer ", "", 1).strip()
         try:
-            # Decode and verify the digital signature
             payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
             current_user_id = payload["user_id"]
         except jwt.ExpiredSignatureError:
@@ -67,6 +67,7 @@ def token_required(f):
             
         return f(current_user_id, *args, **kwargs)
     return decorated
+
 
 @app.route("/auth/register", methods=["POST"])
 def register():
