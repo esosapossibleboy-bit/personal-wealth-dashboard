@@ -1,48 +1,51 @@
 import os
-import sqlite3
 import hashlib
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app) # Opens the security window so the public web can talk to us
+CORS(app)
 
-DB_FILE = "wealth_vault.db"
+# 🔑 Reads your secret database URL from Render's environment settings
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# 🏛️ DATABASE ARCHITECTURE CREATOR
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
+
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    if not DATABASE_URL:
+        print("⚠️ No DATABASE_URL found. Waiting for cloud configuration.")
+        return
+    conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 👥 Create Users Table (Stores usernames and securely encrypted passwords)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL
     )
     """)
     
-    # 📊 Create Transactions Table (Linked directly to user IDs)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
         type TEXT NOT NULL,
         amount REAL NOT NULL,
         category TEXT NOT NULL,
-        description TEXT,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        description TEXT
     )
     """)
     conn.commit()
+    cursor.close()
     conn.close()
 
-# 📝 HELPER RECIPE: Securely convert plain text passwords into a custom math hash code
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# 🛣️ ACCOUNT CANAL 1: User Registration
 @app.route("/auth/register", methods=["POST"])
 def register():
     data = request.json
@@ -52,54 +55,53 @@ def register():
     if not username or not password:
         return jsonify({"status": "Error", "message": "Missing credentials"}), 400
         
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, hash_password(password)))
+        cursor.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, hash_password(password)))
         conn.commit()
-        return jsonify({"status": "Success", "message": "Account created! You can log in now."})
-    except sqlite3.IntegrityError:
+        return jsonify({"status": "Success", "message": "Account created permanently in cloud DB!"})
+    except psycopg2.IntegrityError:
+        conn.rollback()
         return jsonify({"status": "Error", "message": "Username already taken"}), 400
     finally:
+        cursor.close()
         conn.close()
 
-# 🛣️ ACCOUNT CANAL 2: User Login
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.json
     username = data.get("username", "").strip().lower()
     password = data.get("password", "")
     
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,))
+    cursor.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
     user = cursor.fetchone()
+    cursor.close()
     conn.close()
     
-    # 🔍 FIXED: Compare user[1] (the saved password hash) and return user[0] (the user ID number)
-    if user and user[1] == hash_password(password):
-        return jsonify({"status": "Success", "message": "Login validated!", "user_id": user[0]})
+    if user:
+        user_id, saved_hash = user
+        if saved_hash == hash_password(password):
+            return jsonify({"status": "Success", "message": "Login validated!", "user_id": user_id})
     return jsonify({"status": "Error", "message": "Invalid username or password"}), 401
 
-
-# # 🛣️ DATA CANAL 3: Get User Ledger Metrics and SQL Data Rows
 @app.route("/ledger", methods=["GET"])
 def get_ledger():
     user_id = request.args.get("user_id")
     if not user_id:
-        return jsonify({"status": "Error", "message": "Unauthorized navigation"}), 401
+        return jsonify({"status": "Error", "message": "Unauthorized"}), 401
         
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row # Allows pulling database columns by their label names
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("SELECT id, type, amount, category, description FROM transactions WHERE user_id = %s ORDER BY id ASC", (user_id,))
+    transactions = cursor.fetchall()
     
-    cursor.execute("SELECT type, amount, category, description, id FROM transactions WHERE user_id = ?", (user_id,))
-    rows = cursor.fetchall()
-    
-    transactions = [dict(row) for row in rows]
     total_income = sum(item["amount"] for item in transactions if item["type"] == "Income")
     total_expense = sum(item["amount"] for item in transactions if item["type"] == "Expense")
     
+    cursor.close()
     conn.close()
     return jsonify({
         "transactions": transactions,
@@ -108,43 +110,34 @@ def get_ledger():
         "balance": total_income - total_expense
     })
 
-# 🛣️ DATA CANAL 4: Post New Transaction Record
 @app.route("/add", methods=["POST"])
 def add_transaction():
     data = request.json
-    user_id = data.get("user_id")
-    tx_type = data.get("type")
-    amount = float(data.get("amount", 0))
-    category = data.get("category")
-    description = data.get("description")
-    
-    if not user_id:
-        return jsonify({"status": "Error", "message": "Unauthorized operational request"}), 401
-        
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO transactions (user_id, type, amount, category, description) VALUES (?, ?, ?, ?, ?)",
-                   (user_id, tx_type, amount, category, description))
+    cursor.execute(
+        "INSERT INTO transactions (user_id, type, amount, category, description) VALUES (%s, %s, %s, %s, %s)",
+        (data.get("user_id"), data.get("type"), float(data.get("amount", 0)), data.get("category"), data.get("description"))
+    )
     conn.commit()
+    cursor.close()
     conn.close()
-    return jsonify({"status": "Success", "message": "Transaction logged to SQL server!"})
+    return jsonify({"status": "Success", "message": "Saved to PostgreSQL!"})
 
-# 🛣️ DATA CANAL 5: Delete explicit record from SQL row index
 @app.route("/delete", methods=["POST"])
 def delete_transaction():
     data = request.json
-    tx_id = data.get("tx_id")
-    user_id = data.get("user_id")
-    
-    conn = sqlite3.connect(DB_FILE)
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM transactions WHERE id = ? AND user_id = ?", (tx_id, user_id))
+    cursor.execute("DELETE FROM transactions WHERE id = %s AND user_id = %s", (data.get("tx_id"), data.get("user_id")))
     conn.commit()
+    cursor.close()
     conn.close()
-    return jsonify({"status": "Success", "message": "Row deleted from SQL ledger"})
+    return jsonify({"status": "Success", "message": "Deleted from PostgreSQL!"})
+
+# Run table setup on startup
+init_db()
 
 if __name__ == "__main__":
-    init_db() # Run database setup checklist automatically on start
-    # Read the dynamic deployment port from Render Cloud, or use 8000 locally
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
