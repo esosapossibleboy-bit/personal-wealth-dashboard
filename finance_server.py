@@ -76,9 +76,11 @@ def login():
     user = cursor.fetchone()
     conn.close()
     
+    # 🔍 FIXED: Compare user[1] (the saved password hash) and return user[0] (the user ID number)
     if user and user[1] == hash_password(password):
         return jsonify({"status": "Success", "message": "Login validated!", "user_id": user[0]})
     return jsonify({"status": "Error", "message": "Invalid username or password"}), 401
+
 
 # # 🛣️ DATA CANAL 3: Get User Ledger Metrics and SQL Data Rows
 @app.route("/ledger", methods=["GET"])
