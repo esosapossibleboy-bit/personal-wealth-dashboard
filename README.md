@@ -1,60 +1,60 @@
-# 📈 Full-Stack Personal Wealth Analytics Dashboard
+# 📈 Esosa Wealth Vault — Full-Stack Personal Finance Analytics Platform (v2.0)
 
-A high-performance, full-stack personal finance tracking utility engineered with an asynchronous architecture. The application enables users to log financial transactions, perform dynamic real-time accounting calculations, monitor localized budget safety thresholds, and visualize capital allocation matrixes seamlessly inside a modern user interface.
+A production-ready, multi-user full-stack financial tracking application engineered with **React**, **TypeScript**, **Python (Flask)**, and **PostgreSQL**. Users can securely register accounts, log cash inflows and expenses, monitor automated budget threshold alerts, visualize capital allocation matrices, and export ledgers to CSV spreadsheets.
 
----
-
-## 🚀 Key Engineering & Structural Features
-
-* **Asynchronous Full-Stack Architecture:** Coordinates an decoupled frontend visual client with a localized Python server using cross-origin resource sharing (CORS) protocols.
-* **Dynamic Budget Event Listeners:** Watches database state parameters in real time, automatically deploying warning system banners if spending debits cross customizable threshold ceilings (set to \$1,000.00).
-* **Live Mathematical Data Visualization:** Integrates Chart.js via a high-availability CDN network to compute and render real-time asset vs. liability allocation doughnut charts dynamically.
-* **Persistent Hardware Registry Ledger:** Restructures runtime object profiles into serialized JSON strings, bypassing volatile temporary memory (RAM) bounds to preserve transaction data inside a physical text-file ledger database.
-* **Full Data Lifecycle Pipeline (CRUD):** Implements specialized micro-route canals allowing the system to append assets, index log coordinates, map tables, and fire server-side database purges via distinct execution keys.
+🌐 **Live Production App:** [https://github.io](https://github.io)  
+⚙️ **REST API Endpoint:** [https://onrender.com](https://onrender.com)
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Key Engineering & Security Features
 
-* **Frontend Engine:** HTML5, CSS3, JavaScript (ES6+ Asynchronous Fetch Core)
-* **Visual Rendering Layer:** Chart.js Engine Matrix
-* **Backend Core Routing:** Python 3, Flask Micro-Framework, Flask-CORS
-* **Version Control Architecture:** Git, GitHub Registry Channels
+* **Modern React + TypeScript Frontend:** Rebuilt into modular, strongly typed UI components (`App.tsx`, `LoginScreen.tsx`) with strict TypeScript interfaces and reactive state management.
+* **JWT Token Authentication & Account Isolation:** Secures user sessions using signed **JSON Web Tokens (HS256)** via `Authorization: Bearer` headers and **SHA-256 password hashing**, ensuring strict data isolation per user.
+* **Permanent Cloud PostgreSQL Database:** Migrated from local storage to a relational **PostgreSQL** instance hosted on **Neon Cloud** using parameterized queries (`psycopg2`) to prevent SQL injection.
+* **Automated API Security Testing (`pytest`):** Includes an automated unit and integration test suite (`test_api.py`) validating password hashing and rejecting unauthorized or tampered JWT requests.
+* **Real-Time Financial Analytics & CSV Export:** Computes live net worth, dynamically adjusts proportional asset-vs-expense allocation bars, triggers budget limit warnings, and exports transaction history to `.csv` spreadsheets.
 
 ---
 
-## 💻 Local System Architecture & Installation
+## 🛠️ Tech Stack
 
-Follow these operational deployment steps to fire up the system workspace locally on your machine:
+* **Frontend:** React, TypeScript, Vite, HTML5, CSS3
+* **Backend:** Python 3, Flask, Flask-CORS, Gunicorn, PyJWT
+* **Database:** PostgreSQL (Neon Cloud)
+* **Testing:** Pytest
+* **Cloud Deployment & DevOps:** Render (Backend API), GitHub Pages (Frontend Client), Git & GitHub
 
-### 1. Initialize the Environment & Dependencies
-Open your computer terminal and download the required backend pipeline packages:
-```bash
-pip install flask flask-cors
+---
+
+## 🏗️ System Architecture
+
+```text
+  [ React + TypeScript Client (GitHub Pages) ]
+                      │
+                      │  HTTPS REST API + JWT Bearer Token
+                      ▼
+  [ Python Flask + Gunicorn Server (Render Cloud) ]
+                      │
+                      │  Parameterized SQL Queries (psycopg2)
+                      ▼
+  [ Relational PostgreSQL Database (Neon Cloud) ]
 ```
 
-### 2. Boot Up the Python API Server Machine
-Navigate into your project source directory and start the Flask network host server to listen on port `8000`:
+---
+
+## 💻 Local Setup & Running Tests
+
+### 1. Start the Python Backend & Run Automated Tests
 ```bash
+pip install -r requirements.txt
+python -m pytest
 python finance_server.py
 ```
 
-### 3. Launch the Analytical Dashboard Interface
-There is no build compile step required for the client view. Simply run the `finance_app.html` file using your development environment's Live Server expansion tool, or drop the local directory path directly into any modern web browser window:
-```text
-http://localhost:5500/finance_app.html
-```
-
----
-
-## 🔍 System Pipeline Architecture Blueprint
-
-```text
-  [ Client Frontend Dashboard View ]  <--->  [ Asynchronous Fetch Bridge ]
-                  ^                                          |
-                  | (JSON Data Packages)                     v
-        [ Chart.js Metric Matrix ]            [ Flask API Server Core (Port 8000) ]
-                                                             |
-                                                             v
-                                             [ Persistent flat-file Data Ledger ]
+### 2. Start the React + TypeScript Frontend
+```bash
+cd wealth-react
+npm install
+npm run dev
 ```
