@@ -6,11 +6,11 @@ let currentTransactions = [];
 window.onload = checkActiveSession;
 
 function checkActiveSession() {
-    let uid = localStorage.getItem("vault_user_id");
-    if (uid) {
+    let token = localStorage.getItem("vault_token");
+    if (token) {
         document.getElementById("auth-screen").style.display = "none";
         document.getElementById("app-screen").style.display = "block";
-        fetchLedgerDataLogs(uid);
+        fetchLedgerDataLogs();
     }
 }
 
@@ -38,7 +38,7 @@ function executeAuthAction() {
     .then(data => {
         if (data.status === "Success") {
             if (isLoginMode) { 
-                localStorage.setItem("vault_user_id", data.user_id); 
+                localStorage.setItem("vault_token", data.token); 
                 checkActiveSession(); 
             } else { 
                 alert("✅ " + data.message); 
@@ -55,8 +55,16 @@ function executeAuthAction() {
 }
 
 function logoutSession() { 
-    localStorage.removeItem("vault_user_id"); 
+    localStorage.removeItem("vault_token"); 
     location.reload(); 
+}
+
+function getAuthHeaders() {
+    let token = localStorage.getItem("vault_token");
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
 }
 
 function updateNativeVisualization(inc, exp) {
@@ -76,9 +84,18 @@ function updateNativeVisualization(inc, exp) {
     document.getElementById("matrix-bar-expense").style.width = expWidth + "%";
 }
 
-function fetchLedgerDataLogs(uid) {
-    fetch(`${API_BASE_URL}/ledger?user_id=${uid}`)
-    .then(res => res.json())
+function fetchLedgerDataLogs() {
+    fetch(`${API_BASE_URL}/ledger`, {
+        method: "GET",
+        headers: getAuthHeaders()
+    })
+    .then(res => {
+        if (res.status === 401) {
+            logoutSession();
+            throw new Error("Session expired");
+        }
+        return res.json();
+    })
     .then(data => {
         document.getElementById("net-balance").innerHTML = "$" + data.balance.toLocaleString('en-US', {minimumFractionDigits: 2});
         document.getElementById("total-income").innerHTML = "$" + data.total_income.toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -104,11 +121,11 @@ function fetchLedgerDataLogs(uid) {
             `;
             rowsBox.appendChild(row);
         });
-    });
+    })
+    .catch(err => console.error(err));
 }
 
 function logTransactionAsset() {
-    let uid = localStorage.getItem("vault_user_id");
     let t = document.getElementById("tx-type").value;
     let a_raw = document.getElementById("tx-amount").value.trim();
     let c = document.getElementById("tx-category").value;
@@ -126,42 +143,38 @@ function logTransactionAsset() {
 
     fetch(API_BASE_URL + "/add", {
         method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ user_id: uid, type: t, amount: a, category: c, description: d })
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ type: t, amount: a, category: c, description: d })
     }).then(() => {
         document.getElementById("tx-amount").value = ""; 
         document.getElementById("tx-category").value = ""; 
         document.getElementById("tx-desc").value = "";
-        fetchLedgerDataLogs(uid);
+        fetchLedgerDataLogs();
     });
 }
 
 function deleteTransactionAsset(txId) {
-    let uid = localStorage.getItem("vault_user_id");
     fetch(API_BASE_URL + "/delete", {
         method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ tx_id: txId, user_id: uid })
-    }).then(() => fetchLedgerDataLogs(uid));
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ tx_id: txId })
+    }).then(() => fetchLedgerDataLogs());
 }
 
 function exportToCSV() {
     let tableRows = document.querySelectorAll("#ledger-rows tr");
-    
     if (tableRows.length === 0) {
         alert("⚠️ No transactions available to export!");
         return;
     }
 
     let csvRows = ["Type,Amount,Category,Description"];
-
     tableRows.forEach(row => {
-        let cols = row.querySelectorAll("td");
-        let type = cols[0].innerText.trim();
-        let amount = cols[1].innerText.replace("$", "").replace(/,/g, "").trim();
-        let category = cols[2].innerText.replace(/,/g, " ").trim();
-        let description = cols[3].innerText.replace(/,/g, " ").trim();
-        
+        let [typeCol, amountCol, catCol, descCol] = row.querySelectorAll("td");
+        let type = typeCol.innerText.trim();
+        let amount = amountCol.innerText.replace("$", "").replace(/,/g, "").trim();
+        let category = catCol.innerText.replace(/,/g, " ").trim();
+        let description = descCol.innerText.replace(/,/g, " ").trim();
         csvRows.push(`${type},${amount},${category},${description}`);
     });
 
