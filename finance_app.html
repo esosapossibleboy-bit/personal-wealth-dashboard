@@ -27,6 +27,9 @@
 
         <div id="budget-banner" class="budget-alert">⚠️ WARNING: Your monthly outflow threshold has broken past your budget constraints! Limit optional spending.</div>
 
+        <!-- 🚨 Local Currency Input Validation Slot Alert Frame -->
+        <div id="currency-format-alert" class="input-warning">⚠️ INPUT FORMAT DETECTED: Please write plain math numbers only (Do not include $, commas, or spaces)!</div>
+
         <div class="metrics-grid">
             <div class="metric-card"><h3>Net Valuation</h3><p class="balance" id="net-balance">$0.00</p></div>
             <div class="metric-card"><h3>Total Inflows</h3><p class="income" id="total-income">$0.00</p></div>
@@ -35,7 +38,7 @@
 
         <div class="form-panel">
             <select id="tx-type"><option value="Income">Income (+)</option><option value="Expense">Expense (-)</option></select>
-            <input type="number" id="tx-amount" placeholder="Amount ($)" style="width: 110px;">
+            <input type="text" id="tx-amount" placeholder="Amount ($)" style="width: 110px;">
             <input type="text" id="tx-category" placeholder="Category">
             <input type="text" id="tx-desc" placeholder="Description Note" style="width: 220px;">
             <button class="post-btn" onclick="logTransactionAsset()">Post Record</button>
