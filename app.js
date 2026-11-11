@@ -1,13 +1,10 @@
-// ☁️ CONNECTED DIRECTLY TO THE LIVE PRODUCTION CLOUD APP SERVER CHANNEL:
-// Swap this string URL out with your actual unique link from the Render Cloud interface!
-const API_BASE_URL = "https://esosa-wealth-api.onrender.com";
+const API_BASE_URL = "https://onrender.com";
 const MONTHLY_BUDGET_CAP = 1000.00;
 let isLoginMode = true;
 let currentTransactions = [];
 
 window.onload = checkActiveSession;
 
-// 🔐 SESSION MONITORING ENGINE
 function checkActiveSession() {
     let uid = localStorage.getItem("vault_user_id");
     if (uid) {
@@ -24,10 +21,13 @@ function toggleAuthMode() {
     document.getElementById("auth-toggle").innerHTML = isLoginMode ? "Don't have an account? Register here" : "Already registered? Login here";
 }
 
-// 👥 SECURE NETWORK ACCESS ROUTER
 function executeAuthAction() {
-    let u = document.getElementById("auth-username").value, p = document.getElementById("auth-password").value;
-    if (!u || !p) return;
+    let u = document.getElementById("auth-username").value;
+    let p = document.getElementById("auth-password").value;
+    if (!u || !p) {
+        alert("⚠️ Please enter both a username and a password!");
+        return;
+    }
     
     fetch(API_BASE_URL + (isLoginMode ? "/auth/login" : "/auth/register"), {
         method: "POST", 
@@ -41,10 +41,16 @@ function executeAuthAction() {
                 localStorage.setItem("vault_user_id", data.user_id); 
                 checkActiveSession(); 
             } else { 
-                alert(data.message); 
+                alert("✅ " + data.message); 
                 toggleAuthMode(); 
             }
-        } else { alert("❌ " + data.message); }
+        } else { 
+            alert("❌ " + data.message); 
+        }
+    })
+    .catch(err => {
+        alert("🚨 CONNECTION ERROR: Server may be waking up. Wait 30 seconds and try again.");
+        console.error(err);
     });
 }
 
@@ -53,7 +59,6 @@ function logoutSession() {
     location.reload(); 
 }
 
-// 📊 NATIVE PROGRESSIVE ALLOCATION CALCULATOR
 function updateNativeVisualization(inc, exp) {
     let savedWidth = 100;
     let expWidth = 0;
@@ -61,7 +66,6 @@ function updateNativeVisualization(inc, exp) {
     if (inc > 0) {
         let savedAmount = inc - exp;
         if (savedAmount < 0) savedAmount = 0; 
-        
         savedWidth = Math.round((savedAmount / inc) * 100);
         expWidth = Math.round((exp / inc) * 100);
     }
@@ -72,7 +76,6 @@ function updateNativeVisualization(inc, exp) {
     document.getElementById("matrix-bar-expense").style.width = expWidth + "%";
 }
 
-// 📋 DATA ACQUISITION & LOG VIEW MATRICES
 function fetchLedgerDataLogs(uid) {
     fetch(`${API_BASE_URL}/ledger?user_id=${uid}`)
     .then(res => res.json())
@@ -82,14 +85,16 @@ function fetchLedgerDataLogs(uid) {
         document.getElementById("total-expense").innerHTML = "$" + data.total_expense.toLocaleString('en-US', {minimumFractionDigits: 2});
         
         document.getElementById("budget-banner").style.display = data.total_expense > MONTHLY_BUDGET_CAP ? "block" : "none";
-        
         updateNativeVisualization(data.total_income, data.total_expense);
+
+        currentTransactions = data.transactions;
 
         let rowsBox = document.getElementById("ledger-rows"); 
         rowsBox.innerHTML = "";
         
-        data.transactions.reverse().forEach(item => {
-            let row = document.createElement("tr"), bc = item.type === "Income" ? "badge-income" : "badge-expense";
+        data.transactions.slice().reverse().forEach(item => {
+            let row = document.createElement("tr");
+            let bc = item.type === "Income" ? "badge-income" : "badge-expense";
             row.innerHTML = `
                 <td><span class="badge ${bc}">${item.type.toUpperCase()}</span></td>
                 <td class="${item.type === 'Income' ? 'income' : 'expense'}">$${item.amount.toFixed(2)}</td>
@@ -102,7 +107,6 @@ function fetchLedgerDataLogs(uid) {
     });
 }
 
-// 🚨 VALIDATED ENTRY CONTROLLER PIPELINE
 function logTransactionAsset() {
     let uid = localStorage.getItem("vault_user_id");
     let t = document.getElementById("tx-type").value;
@@ -111,7 +115,6 @@ function logTransactionAsset() {
     let d = document.getElementById("tx-desc").value;
     let alertBox = document.getElementById("currency-format-alert");
 
-    // 🔬 TYPO CAPTURE LAYER: Halts pipeline if illegal input modifiers are detected
     if (a_raw.includes("$") || a_raw.includes(",")) {
         if (alertBox) alertBox.style.display = "block";
         return; 
@@ -148,17 +151,14 @@ function exportToCSV() {
         return;
     }
 
-    // 1. Create the spreadsheet column headers
     let csvRows = ["Type,Amount,Category,Description"];
 
-    // 2. Convert each transaction object into a comma-separated line
     currentTransactions.forEach(item => {
         let cleanDesc = (item.description || "").replace(/,/g, " ");
         let cleanCat = (item.category || "").replace(/,/g, " ");
         csvRows.push(`${item.type},${item.amount.toFixed(2)},${cleanCat},${cleanDesc}`);
     });
 
-    // 3. Create a downloadable file blob and trigger click
     let csvString = csvRows.join("\n");
     let blob = new Blob([csvString], { type: "text/csv" });
     let link = document.createElement("a");
