@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://onrender.com";
+const API_BASE_URL = "https://esosa-wealth-api.onrender.com";
 const MONTHLY_BUDGET_CAP = 1000.00;
 let isLoginMode = true;
 let currentTransactions = [];
@@ -146,17 +146,23 @@ function deleteTransactionAsset(txId) {
 }
 
 function exportToCSV() {
-    if (!currentTransactions || currentTransactions.length === 0) {
+    let tableRows = document.querySelectorAll("#ledger-rows tr");
+    
+    if (tableRows.length === 0) {
         alert("⚠️ No transactions available to export!");
         return;
     }
 
     let csvRows = ["Type,Amount,Category,Description"];
 
-    currentTransactions.forEach(item => {
-        let cleanDesc = (item.description || "").replace(/,/g, " ");
-        let cleanCat = (item.category || "").replace(/,/g, " ");
-        csvRows.push(`${item.type},${item.amount.toFixed(2)},${cleanCat},${cleanDesc}`);
+    tableRows.forEach(row => {
+        let cols = row.querySelectorAll("td");
+        let type = cols[0].innerText.trim();
+        let amount = cols[1].innerText.replace("$", "").replace(/,/g, "").trim();
+        let category = cols[2].innerText.replace(/,/g, " ").trim();
+        let description = cols[3].innerText.replace(/,/g, " ").trim();
+        
+        csvRows.push(`${type},${amount},${category},${description}`);
     });
 
     let csvString = csvRows.join("\n");
