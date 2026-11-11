@@ -9,7 +9,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 # 🔑 Secret cryptographic key used to sign VIP JWT wristbands
