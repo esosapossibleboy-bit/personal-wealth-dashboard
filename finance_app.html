@@ -46,7 +46,11 @@
 
         <div class="workspace">
             <div>
-                <h2>📋 Audit History Log</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>📋 Audit History Log</h2>
+    <button onclick="exportToCSV()" style="background: #2cfd73; color: #0b0f19; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">📥 Export CSV</button>
+</div>
+
                 <table>
                     <thead><tr><th>Type</th><th>Amount</th><th>Category</th><th>Description</th><th>Action</th></tr></thead>
                     <tbody id="ledger-rows"></tbody>

@@ -3,6 +3,7 @@
 const API_BASE_URL = "https://esosa-wealth-api.onrender.com";
 const MONTHLY_BUDGET_CAP = 1000.00;
 let isLoginMode = true;
+let currentTransactions = [];
 
 window.onload = checkActiveSession;
 
@@ -139,4 +140,29 @@ function deleteTransactionAsset(txId) {
         headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ tx_id: txId, user_id: uid })
     }).then(() => fetchLedgerDataLogs(uid));
+}
+
+function exportToCSV() {
+    if (!currentTransactions || currentTransactions.length === 0) {
+        alert("⚠️ No transactions available to export!");
+        return;
+    }
+
+    // 1. Create the spreadsheet column headers
+    let csvRows = ["Type,Amount,Category,Description"];
+
+    // 2. Convert each transaction object into a comma-separated line
+    currentTransactions.forEach(item => {
+        let cleanDesc = (item.description || "").replace(/,/g, " ");
+        let cleanCat = (item.category || "").replace(/,/g, " ");
+        csvRows.push(`${item.type},${item.amount.toFixed(2)},${cleanCat},${cleanDesc}`);
+    });
+
+    // 3. Create a downloadable file blob and trigger click
+    let csvString = csvRows.join("\n");
+    let blob = new Blob([csvString], { type: "text/csv" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "wealth_vault_ledger.csv";
+    link.click();
 }
