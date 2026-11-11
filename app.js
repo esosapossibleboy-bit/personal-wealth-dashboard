@@ -1,6 +1,6 @@
 // ☁️ CONNECTED DIRECTLY TO THE LIVE PRODUCTION CLOUD APP SERVER CHANNEL:
 // Swap this string URL out with your actual unique link from the Render Cloud interface!
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://esosa-wealth-api.onrender.com";
 const MONTHLY_BUDGET_CAP = 1000.00;
 let isLoginMode = true;
 

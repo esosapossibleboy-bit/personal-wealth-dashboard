@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Esosa Wealth Vault Engine</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 👥 AUTHENTICATION GATEWAY -->
+    <div id="auth-screen" class="auth-panel">
+        <h2 id="auth-title">Account Login</h2>
+        <input type="text" id="auth-username" class="auth-input" placeholder="Enter Username">
+        <input type="password" id="auth-password" class="auth-input" placeholder="Enter Password">
+        <button class="auth-btn" id="auth-main-btn" onclick="executeAuthAction()">Sign In</button>
+        <span class="toggle-link" id="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Register here</span>
+    </div>
+
+    <!-- 📈 WEALTH DASHBOARD CONSOLE -->
+    <div id="app-screen" class="app-content wrapper">
+        <div class="nav-header">
+            <div>
+                <h1>📈 Esosa Wealth Vault</h1>
+                <p style="color: #8f9cae; margin: 0;">SQL Relational Network Cloud Core v2.0</p>
+            </div>
+            <button class="logout-btn" onclick="logoutSession()">Disconnect Engine</button>
+        </div>
+
+        <div id="budget-banner" class="budget-alert">⚠️ WARNING: Your monthly outflow threshold has broken past your budget constraints! Limit optional spending.</div>
+
+        <!-- 🚨 Local Currency Input Validation Slot Alert Frame -->
+        <div id="currency-format-alert" class="input-warning">⚠️ INPUT FORMAT DETECTED: Please write plain math numbers only (Do not include $, commas, or spaces)!</div>
+
+        <div class="metrics-grid">
+            <div class="metric-card"><h3>Net Valuation</h3><p class="balance" id="net-balance">$0.00</p></div>
+            <div class="metric-card"><h3>Total Inflows</h3><p class="income" id="total-income">$0.00</p></div>
+            <div class="metric-card"><h3>Total Outflows</h3><p class="expense" id="total-expense">$0.00</p></div>
+        </div>
+
+        <div class="form-panel">
+            <select id="tx-type"><option value="Income">Income (+)</option><option value="Expense">Expense (-)</option></select>
+            <input type="text" id="tx-amount" placeholder="Amount ($)" style="width: 110px;">
+            <input type="text" id="tx-category" placeholder="Category">
+            <input type="text" id="tx-desc" placeholder="Description Note" style="width: 220px;">
+            <button class="post-btn" onclick="logTransactionAsset()">Post Record</button>
+        </div>
+
+        <div class="workspace">
+            <div>
+                <h2>📋 Audit History Log</h2>
+                <table>
+                    <thead><tr><th>Type</th><th>Amount</th><th>Category</th><th>Description</th><th>Action</th></tr></thead>
+                    <tbody id="ledger-rows"></tbody>
+                </table>
+            </div>
+            
+            <!-- 📊 NATIVE VISUAL ALLOCATION MATRIX SPLIT -->
+            <div class="chart-box">
+                <h2 style="margin-top: 0; font-size: 16px; color: #8f9cae;">📊 WEALTH OUTFLOW MATRIX</h2>
+                <div class="matrix-labels">
+                    <span style="color: #2cfd73;">● Saved Net Wealth (<span id="saved-pct">100</span>%)</span>
+                    <br>
+                    <span style="color: #ff4a5a;">● Expenses Outflow (<span id="expense-pct">0</span>%)</span>
+                </div>
+                <div class="bar-container">
+                    <div id="matrix-bar-saved"></div>
+                    <div id="matrix-bar-expense"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
